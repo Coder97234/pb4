@@ -1,7 +1,7 @@
--- Load Rayfield
+-- Load Rayfield UI Library
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- UI Setup
+-- Create UI Window
 local Window = Rayfield:CreateWindow({
 	Name = "🐉 Steal a Dragon | RynthZer0 Hub",
 	LoadingTitle = "Loading Rynth Tools...",
@@ -27,17 +27,20 @@ FarmingTab:CreateToggle({
 		local char = lp.Character or lp.CharacterAdded:Wait()
 		local root = char:WaitForChild("HumanoidRootPart")
 
-		while _G.AutoFarmTouch do
-			for _, v in pairs(workspace:GetDescendants()) do
-				if v:IsA("TouchTransmitter") and v.Parent then
-					local part = v.Parent
-					firetouchinterest(root, part, 0)
-					task.wait()
-					firetouchinterest(root, part, 1)
+		spawn(function()
+			while _G.AutoFarmTouch do
+				for _, v in pairs(workspace:GetDescendants()) do
+					if not _G.AutoFarmTouch then break end
+					if v:IsA("TouchTransmitter") and v.Parent then
+						firetouchinterest(root, v.Parent, 0)
+						task.wait()
+						firetouchinterest(root, v.Parent, 1)
+					end
+					task.wait(0.01)
 				end
+				task.wait(0.5)
 			end
-			task.wait(0.5)
-		end
+		end)
 	end
 })
 
@@ -86,32 +89,50 @@ local AdminTab = Window:CreateTab("🛠️ Admin Tools", Color3.fromRGB(255, 100
 AdminTab:CreateSection("Troll & Control")
 
 AdminTab:CreateToggle({
-	Name = "Auto",
+	Name = "Auto_Steal_Steal",
 	CurrentValue = false,
 	Callback = function(Value)
-		_G.AdminAuto = Value
-		local RS = game:GetService("ReplicatedStorage")
+		_G.AdminAutoSteal = Value
 
-		while _G.AdminAuto do
-			-- Fire 10 steal remotes
-			for i = 1, 10 do
-				local steal = RS:FindFirstChild("Dragon_Prompt_Steal_" .. i)
-				if steal and steal:IsA("RemoteEvent") then
-					steal:FireServer()
+		spawn(function()
+			while _G.AdminAutoSteal do
+				if not _G.AdminAutoSteal then break end
+
+				local stealPrompts = {}
+				local sellPrompts = {}
+
+				for _, prompt in pairs(workspace:GetDescendants()) do
+					if prompt:IsA("ProximityPrompt") then
+						if prompt.Name:match("Dragon_Prompt_Steal") then
+							table.insert(stealPrompts, prompt)
+						elseif prompt.Name:match("Dragon_Prompt_Sell") then
+							table.insert(sellPrompts, prompt)
+						end
+					end
 				end
-				task.wait(0.1)
-			end
 
-			-- Fire all sell remotes
-			for _, v in pairs(RS:GetChildren()) do
-				if v:IsA("RemoteEvent") and v.Name:match("Dragon_Prompt_Sell") then
-					v:FireServer()
+				for i = 1, math.min(10, #stealPrompts) do
+					if not _G.AdminAutoSteal then break end
+					local prompt = stealPrompts[i]
+					if prompt then
+						prompt:InputHoldBegin()
+						task.wait(0.1)
+						prompt:InputHoldEnd()
+					end
 					task.wait(0.1)
 				end
-			end
 
-			task.wait(1)
-		end
+				for _, prompt in pairs(sellPrompts) do
+					if not _G.AdminAutoSteal then break end
+					prompt:InputHoldBegin()
+					task.wait(0.1)
+					prompt:InputHoldEnd()
+					task.wait(0.1)
+				end
+
+				task.wait(1)
+			end
+		end)
 	end
 })
 
@@ -120,5 +141,4 @@ local CreditsTab = Window:CreateTab("📜 Credits", Color3.fromRGB(85, 85, 255))
 CreditsTab:CreateSection("Made by RynthZer0 🔵")
 CreditsTab:CreateLabel("Game: Steal a Dragon")
 CreditsTab:CreateLabel("UI: Rayfield | sirius.menu")
-CreditsTab:CreateLabel("Hub Version: Stable 1.0")
-
+CreditsTab:CreateLabel("Hub Version: Updated for ProximityPrompt")
